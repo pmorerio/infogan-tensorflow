@@ -47,7 +47,7 @@ class infogan(object):
 	
         # images: (batch, 28 28, 1)
         with tf.variable_scope('discriminator', reuse=reuse):
-            with slim.arg_scope([slim.conv2d], padding='VALID', activation_fn=None,
+            with slim.arg_scope([slim.conv2d], padding='SAME', activation_fn=None,
                                  stride=2,  weights_initializer=tf.contrib.layers.xavier_initializer()):
                 with slim.arg_scope([slim.batch_norm], decay=0.95, center=True, scale=True, 
                                     activation_fn=lrelu, is_training=(self.mode=='train')):
