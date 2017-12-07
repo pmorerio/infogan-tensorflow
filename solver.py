@@ -1,0 +1,113 @@
+import tensorflow as tf
+import tensorflow.contrib.slim as slim
+from tensorflow.examples.tutorials.mnist import input_data
+
+import numpy as np
+import os
+
+import utils
+
+
+class Solver(object):
+
+    def __init__(self, model, batch_size=16,  model_save_path='model', 
+		    log_dir='logs', data_dir='/data/datasets/mnist',
+		    train_iter=50000):
+        
+        self.model = model
+        self.batch_size = batch_size
+	self.model_save_path = model_save_path
+	self.log_dir = log_dir
+	self.data_dir = data_dir
+	self.train_iter=train_iter
+	
+	# create directories if not exist
+	if not tf.gfile.Exists(self.model_save_path):
+	    tf.gfile.MakeDirs(self.model_save_path)
+
+	self.config = tf.ConfigProto()
+        self.config.gpu_options.allow_growth=True
+	self.config.allow_soft_placement=True
+
+    def load_data(self):
+	#original data is in [0:1], rescale to [-1,1]
+	mnist = input_data.read_data_sets(self.data_dir, one_hot=True)
+	self.train_data = mnist.train.images.reshape(((len(mnist.train.labels),28,28,1)))*2. - 1.
+	self.train_labels = mnist.train.labels
+	self.test_data = mnist.test.images.reshape(((len(mnist.test.labels),28,28,1)))*2. - 1.
+	self.test_labels = mnist.test.labels
+	self.val_data = mnist.validation.images.reshape(((len(mnist.validation.labels),28,28,1)))*2. - 1.
+	self.val_labels = mnist.train.labels
+	mnist = None
+	    
+	    
+    def train(self):
+	
+	print 'Training..'
+        # load mnist dataset
+	self.load_data()
+        
+        # build a graph
+        model = self.model
+        model.build_model()
+
+        # make directory if not exists
+        if tf.gfile.Exists(self.log_dir):
+            tf.gfile.DeleteRecursively(self.log_dir)
+        tf.gfile.MakeDirs(self.log_dir)
+	if not tf.gfile.Exists(self.model_save_path):
+	    tf.gfile.MakeDirs(self.model_save_path)
+	
+	
+
+
+        with tf.Session(config=self.config) as sess:
+            # random initialize G and D
+            tf.global_variables_initializer().run()
+           
+            summary_writer = tf.summary.FileWriter(logdir=self.log_dir, graph=tf.get_default_graph())
+            saver = tf.train.Saver()
+
+	    
+	    print ('Start training.')
+            t = 0
+	    
+            for step in range(self.train_iter):
+		
+                t+=1
+                i = step % int(self.train_data.shape[0] / self.batch_size)
+		start = i*self.batch_size
+		end = (i+1)*self.batch_size
+
+		input_noise = utils.sample_Z(self.batch_size, model.noise_dim, 'uniform')
+
+		feed_dict = {model.noise: input_noise, model.images: self.train_data[start:end]}
+	
+		avg_D_fake = sess.run(model.logits_fake, feed_dict)
+		avg_D_real = sess.run(model.logits_real, feed_dict)
+		
+		sess.run(model.D_train_op, feed_dict)
+		sess.run(model.G_train_op, feed_dict)
+		
+		if (t+1) % 100 == 0:
+		    summary, dl, gl = sess.run([model.summary_op, model.D_loss, model.G_loss], feed_dict)
+		    summary_writer.add_summary(summary, t)
+		    print ('Step: [%d/%d] \n G_loss: [%.6f] D_loss: [%.6f]' \
+			       %(t+1, self.train_iter, gl, dl))
+		    print 'avg_D_fake',str(avg_D_fake.mean()),'avg_D_real',str(avg_D_real.mean())
+		    
+		if (t+1) % 1000 == 0:  
+		    saver.save(sess, os.path.join(self.model_save_path, 'sampler')) 
+
+if __name__=='__main__':
+    
+    import matplotlib.pyplot as plt
+    from model import infogan
+    model = infogan()
+    solver = Solver(model)
+    solver.load_data()
+    n=9999
+    print(solver.test_labels[n])
+    plt.imshow(np.squeeze(solver.test_data[n]))
+    plt.show()
+    
