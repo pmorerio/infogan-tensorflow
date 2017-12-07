@@ -52,7 +52,7 @@ class infogan(object):
                     net = slim.conv2d(images, 64, [4, 4], stride=2, scope='conv1')   
                     #~ net = slim.batch_norm(net, scope='bn1')
                     net = slim.conv2d(net, 128, [4, 4],stride=2, scope='conv2')  
-                    #~ net = slim.batch_norm(net, scope='bn2')
+                    net = slim.batch_norm(net, scope='bn2')
                     net = slim.conv2d(net, 1024, [1, 1], scope='fc1')  #FC as 1-d conv
 		    net = slim.batch_norm(net, scope='bn_fc1')
 		    net = slim.conv2d(net,1, [1,1] ,activation_fn=tf.sigmoid,scope='sigmoid') #FC as 1-d conv
