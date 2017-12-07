@@ -81,7 +81,7 @@ class infogan(object):
 	    
 	    self.noise = tf.placeholder(tf.float32, [None, self.noise_dim], 'noise')
 	    if self.n_cat_codes > 0:
-		self.cat_codes = tf.placeholder(tf.float32, None, self.n_cat_codes], 'cat_codes')
+		self.cat_codes = tf.placeholder(tf.float32, [None, self.n_cat_codes], 'cat_codes')
 	    else:
 		self.cat_codes = None
 		
