@@ -102,6 +102,8 @@ class infogan(object):
 			tf.nn.softmax_cross_entropy_with_logits(\
 						labels=self.cat_codes, 
 						logits=self.Q_logits))
+	    else:
+		self.Q_loss_cat = 0
 	    
 	    # Losses
 	    
