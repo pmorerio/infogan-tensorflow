@@ -47,13 +47,13 @@ class infogan(object):
 	
         # images: (batch, 28 28, 1)
         with tf.variable_scope('discriminator', reuse=reuse):
-            with slim.arg_scope([slim.conv2d], padding='VALID', activation_fn=None,
+            with slim.arg_scope([slim.conv2d], padding='SAME', activation_fn=None,
                                  stride=2,  weights_initializer=tf.contrib.layers.xavier_initializer()):
                 with slim.arg_scope([slim.batch_norm], decay=0.95, center=True, scale=True, 
                                     activation_fn=lrelu, is_training=(self.mode=='train')):
                     
                     net = slim.conv2d(images, 64, [4, 4], stride=2, scope='conv1')   
-                    net = slim.batch_norm(net, scope='bn1')
+                    #~ net = slim.batch_norm(net, scope='bn1')
                     net = slim.conv2d(net, 128, [4, 4],stride=2, scope='conv2')  
                     net = slim.batch_norm(net, scope='bn2') 
 		    net=slim.flatten(net)
@@ -98,8 +98,10 @@ class infogan(object):
 	    self.logits_fake, self.Q_logits = self.D(self.fake_images, reuse=True)
 	    
 	    if self.n_cat_codes > 0:
-		self.Q_loss_cat = tf.nn.softmax_cross_entropy_with_logits(labels=self.cat_codes, 
-										    logits=self.Q_logits)
+		self.Q_loss_cat = tf.reduce_mean(\
+			tf.nn.softmax_cross_entropy_with_logits(\
+						labels=self.cat_codes, 
+						logits=self.Q_logits))
 	    
 	    # Losses
 	    
@@ -124,7 +126,7 @@ class infogan(object):
 	    
             with tf.variable_scope('training_op',reuse=False):
                 self.D_train_op = slim.learning.create_train_op(self.D_loss, self.D_optimizer, variables_to_train=D_vars)
-		self.G_train_op = slim.learning.create_train_op(self.G_loss, self.G_optimizer, variables_to_train=G_vars)
+		self.G_train_op = slim.learning.create_train_op(self.G_loss + self.lambda_cat * self.Q_loss_cat, self.G_optimizer, variables_to_train=G_vars)
             
             
             # Summary ops
