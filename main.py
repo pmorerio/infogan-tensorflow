@@ -14,7 +14,7 @@ def main(_):
     
     with tf.device('/gpu:'+FLAGS.gpu):
 
-	model = infogan(mode=FLAGS.mode, learning_rate=0.0002)
+	model = infogan(mode=FLAGS.mode, learning_rate=0.0005)
 	solver = Solver(model, model_save_path=FLAGS.model_save_path)
 	
 	if FLAGS.mode == 'train':
