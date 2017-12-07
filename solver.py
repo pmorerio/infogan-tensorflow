@@ -10,7 +10,7 @@ import utils
 
 class Solver(object):
 
-    def __init__(self, model, batch_size=16,  model_save_path='model', 
+    def __init__(self, model, batch_size=32,  model_save_path='model', 
 		    log_dir='logs', data_dir='/data/datasets/mnist',
 		    train_iter=50000):
         
@@ -73,15 +73,20 @@ class Solver(object):
             t = 0
 	    
             for step in range(self.train_iter):
-		
+
                 t+=1
                 i = step % int(self.train_data.shape[0] / self.batch_size)
 		start = i*self.batch_size
 		end = (i+1)*self.batch_size
 
 		input_noise = utils.sample_Z(self.batch_size, model.noise_dim, 'uniform')
-
-		feed_dict = {model.noise: input_noise, model.images: self.train_data[start:end]}
+		
+		if model.n_cat_codes > 0:
+		    input_cat = utils.sample_cat(self.batch_size, model.n_cat_codes)
+		    feed_dict = {model.noise: input_noise, model.cat_codes: input_cat,
+				    model.images: self.train_data[start:end]}
+		else:
+		    feed_dict = {model.noise: input_noise, model.images: self.train_data[start:end]}
 	
 		avg_D_fake = sess.run(model.logits_fake, feed_dict)
 		avg_D_real = sess.run(model.logits_real, feed_dict)

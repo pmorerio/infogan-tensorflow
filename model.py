@@ -5,17 +5,20 @@ from utils import lrelu
 
 class infogan(object):
 
-    def __init__(self, mode='train',noise_dim=50,n_cont_codes=0,n_cat_codes=0,learning_rate=0.0001):
+    def __init__(self, mode='train',noise_dim=50,n_cat_codes=0,n_cont_codes=0,
+		    learning_rate=0.0001, lambda_cat=1., lambda_cont=0.1):
         self.mode = mode
         self.learning_rate = learning_rate 
 	self.n_cont_codes = n_cont_codes
 	self.n_cat_codes = n_cat_codes
-	self.noise_dim=noise_dim
+	self.noise_dim = noise_dim
+	self.lambda_cat = lambda_cat
+	self.lambda_cont = lambda_cont 
 	    
     def G(self, inputs, cat_codes, cont_codes, reuse=False):
 	
 	if cat_codes is not None: 
-	    inputs = tf.concat([iputs,cat_codes], axis=-1)
+	    inputs = tf.concat([inputs,cat_codes], axis=-1)
 	if cont_codes is not None:
 	    inputs = tf.concat([inputs,cont_codes], axis=-1)
 	
@@ -40,23 +43,33 @@ class infogan(object):
 		    return net
 	    
 	    
-    def D(self, images, reuse=False):
+    def D(self, images, reuse=False): # D has actually two heads D & Q
 	
         # images: (batch, 28 28, 1)
         with tf.variable_scope('discriminator', reuse=reuse):
-            with slim.arg_scope([slim.conv2d], padding='SAME', activation_fn=None,
+            with slim.arg_scope([slim.conv2d], padding='VALID', activation_fn=None,
                                  stride=2,  weights_initializer=tf.contrib.layers.xavier_initializer()):
                 with slim.arg_scope([slim.batch_norm], decay=0.95, center=True, scale=True, 
                                     activation_fn=lrelu, is_training=(self.mode=='train')):
                     
                     net = slim.conv2d(images, 64, [4, 4], stride=2, scope='conv1')   
-                    #~ net = slim.batch_norm(net, scope='bn1')
+                    net = slim.batch_norm(net, scope='bn1')
                     net = slim.conv2d(net, 128, [4, 4],stride=2, scope='conv2')  
-                    net = slim.batch_norm(net, scope='bn2')
-                    net = slim.conv2d(net, 1024, [1, 1], scope='fc1')  #FC as 1-d conv
+                    net = slim.batch_norm(net, scope='bn2') 
+		    net=slim.flatten(net)
+                    net = slim.fully_connected(net, 1024, scope='fc1') 
 		    net = slim.batch_norm(net, scope='bn_fc1')
-		    net = slim.conv2d(net,1, [1,1] ,activation_fn=tf.sigmoid,scope='sigmoid') #FC as 1-d conv
-		    return slim.flatten(net)
+
+		    G = slim.fully_connected(net,1, activation_fn=tf.sigmoid, scope='sigmoid') 
+
+		    dim_q = self.n_cat_codes+ 2* self.n_cont_codes
+		    if dim_q==0:
+			return G, None
+		    else:
+			Q = slim.fully_connected(net,128, scope='q_fc1')
+			Q = slim.batch_norm(Q, scope='bn_q_fc1')
+			Q = slim.fully_connected(net,dim_q ,activation_fn=None, scope='q_out') 
+			return G, Q
 
 
     def build_model(self):
@@ -68,7 +81,7 @@ class infogan(object):
 	    
 	    self.noise = tf.placeholder(tf.float32, [None, self.noise_dim], 'noise')
 	    if self.n_cat_codes > 0:
-		self.cat_codes = tf.placeholder(tf.float32, [None, self.n_cat_codes], 'cat_codes')
+		self.cat_codes = tf.placeholder(tf.float32, [32, self.n_cat_codes], 'cat_codes')
 	    else:
 		self.cat_codes = None
 		
@@ -81,9 +94,12 @@ class infogan(object):
 	    
 	    self.fake_images = self.G(self.noise, self.cat_codes, self.cont_codes)
 	    
-	    self.logits_real = self.D(self.images)
-	    self.logits_fake = self.D(self.fake_images, reuse=True)
+	    self.logits_real, _ = self.D(self.images) # too bad Q is not used for real samples...
+	    self.logits_fake, self.Q_logits = self.D(self.fake_images, reuse=True)
 	    
+	    if self.n_cat_codes > 0:
+		self.Q_loss_cat = tf.nn.softmax_cross_entropy_with_logits(labels=self.cat_codes, 
+										    logits=self.Q_logits)
 	    
 	    # Losses
 	    
@@ -113,16 +129,19 @@ class infogan(object):
             
             # Summary ops
 	    
-            E_loss_summary = tf.summary.scalar('E_loss', self.G_loss)
+            G_loss_summary = tf.summary.scalar('G_loss', self.G_loss)
+	    if self.n_cat_codes > 0:
+		Q_loss_cat_summary = tf.summary.scalar('Q_loss_cat', self.Q_loss_cat)
             D_loss_summary = tf.summary.scalar('D_loss', self.D_loss)
             D_loss_real_summary = tf.summary.scalar('D_loss_real', self.D_loss_real)
             D_loss_fake_summary = tf.summary.scalar('D_loss_fake', self.D_loss_fake)
-	    gen_images_summary = tf.summary.image('gen_images', self.fake_images)
-            self.summary_op = tf.summary.merge([E_loss_summary, 
-						D_loss_summary, 
-						D_loss_fake_summary, 
-						D_loss_real_summary,
-						gen_images_summary])
+	    gen_images_summary = tf.summary.image('gen_images', self.fake_images,max_outputs=6)
+            self.summary_op = tf.summary.merge_all()
+            #~ self.summary_op = tf.summary.merge([G_loss_summary, 
+						#~ D_loss_summary, 
+						#~ D_loss_fake_summary, 
+						#~ D_loss_real_summary,
+						#~ gen_images_summary])
             
 
             #~ for var in tf.trainable_variables():

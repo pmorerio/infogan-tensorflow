@@ -1,1 +1,3 @@
-# infogan-tensorflow
+# Infogan-tensorflow
+
+Work in progress....

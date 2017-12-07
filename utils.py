@@ -8,7 +8,14 @@ def sample_Z(m, n, mode='uniform'):
 	if mode=='gaussian':
 		return np.clip(npr.normal(0,0.1,(m,n)),-1,1)
 
+
+def sample_cat(m,n):
     
+    cat = npr.randint(0,n, size=m)
+    out = np.zeros((m,n))
+    out[np.arange(m),cat]=1
+    return out
+
 def lrelu(input, leak=0.2, scope='lrelu'):
     
     return tf.maximum(input, leak*input)
