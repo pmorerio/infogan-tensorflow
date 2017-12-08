@@ -98,9 +98,9 @@ class infogan(object):
 	    self.logits_fake, self.Q_logits = self.D(self.fake_images, reuse=True)
 	    
 	    if self.n_cat_codes > 0:
-		self.Q_loss_cat = tf.nn.softmax_cross_entropy_with_logits(\
+		self.Q_loss_cat = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(\
 						labels=self.cat_codes, 
-						logits=self.Q_logits)
+						logits=self.Q_logits))
 	    else:
 		self.Q_loss_cat = 0
 	    
