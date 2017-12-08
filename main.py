@@ -20,6 +20,8 @@ def main(_):
 	
 	if FLAGS.mode == 'train':
 		solver.train()
+	elif FLAGS.mode == 'test':
+		solver.test()
 	else:
 	    print 'Unrecognized mode.'
 	

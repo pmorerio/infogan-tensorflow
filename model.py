@@ -35,9 +35,9 @@ class infogan(object):
 
 		    net = slim.conv2d(inputs,1024,[1,1],scope='fc1')#FC1
 		    net = slim.batch_norm(net, scope='bn1')
-                    net = slim.conv2d_transpose(net, 256, [7, 7], padding='VALID', scope='conv_transpose1')   # (batch_size, 7, 7, x)
+                    net = slim.conv2d_transpose(net, 128, [7, 7], padding='VALID', scope='conv_transpose1')   # (batch_size, 7, 7, x)
                     net = slim.batch_norm(net, scope='bn_conv_transpose1')
-                    net = slim.conv2d_transpose(net, 128, [3, 3], scope='conv_transpose2')  # (batch_size, 14, 14, x)
+                    net = slim.conv2d_transpose(net, 64, [3, 3], scope='conv_transpose2')  # (batch_size, 14, 14, x)
                     net = slim.batch_norm(net, scope='bn_conv_transpose2')
 		    net = slim.conv2d_transpose(net, 1, [3, 3], activation_fn=tf.nn.tanh, scope='conv_transpose3')  # (batch_size, 28, 28, 1)
 		    return net
@@ -98,10 +98,9 @@ class infogan(object):
 	    self.logits_fake, self.Q_logits = self.D(self.fake_images, reuse=True)
 	    
 	    if self.n_cat_codes > 0:
-		self.Q_loss_cat = tf.reduce_mean(\
-			tf.nn.softmax_cross_entropy_with_logits(\
+		self.Q_loss_cat = tf.nn.softmax_cross_entropy_with_logits(\
 						labels=self.cat_codes, 
-						logits=self.Q_logits))
+						logits=self.Q_logits)
 	    else:
 		self.Q_loss_cat = 0
 	    
@@ -150,6 +149,37 @@ class infogan(object):
 
             #~ for var in tf.trainable_variables():
 		#~ tf.summary.histogram(var.op.name, var) 
+	
+	elif self.mode == 'test':
+	    print('Testing model')
+	    
+	     # Placeholders for noise, codes and images
+	    
+	    self.noise = tf.placeholder(tf.float32, [None, self.noise_dim], 'noise')
+	    if self.n_cat_codes > 0:
+		self.cat_codes = tf.placeholder(tf.float32, [None, self.n_cat_codes], 'cat_codes')
+	    else:
+		self.cat_codes = None
+		
+	    if self.n_cont_codes > 0:
+		self.cont_codes = tf.placeholder(tf.float32, [None, self.n_cont_codes], 'cont_codes')
+	    else:
+		self.cont_codes = None
+			    
+	    self.fake_images = self.G(self.noise, self.cat_codes, self.cont_codes)
+	    gen_images_summary = tf.summary.image('gen_images', self.fake_images,max_outputs=6)
+	    
+	    self.logits_fake, self.Q_logits = self.D(self.fake_images)
+	    
+	    self.pred = tf.argmax(tf.nn.softmax(self.Q_logits))
+	    
+	    self.summary_op = tf.summary.merge_all()
+
+	else:
+	    print('Unrecognized mode')
+	
+	
+	
 if __name__=='__main__':
 
     model = infogan()
