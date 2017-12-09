@@ -5,8 +5,8 @@ from utils import lrelu
 
 class infogan(object):
 
-    def __init__(self, mode='train',noise_dim=50,n_cat_codes=0,n_cont_codes=0,
-		    learning_rate=0.0001, lambda_cat=1., lambda_cont=0.1):
+    def __init__(self, mode='train',noise_dim=100,n_cat_codes=0,n_cont_codes=0,
+		    learning_rate=0.0001, lambda_cat=0.1, lambda_cont=0.1):
         self.mode = mode
         self.learning_rate = learning_rate 
 	self.n_cont_codes = n_cont_codes
@@ -167,7 +167,7 @@ class infogan(object):
 		self.cont_codes = None
 			    
 	    self.fake_images = self.G(self.noise, self.cat_codes, self.cont_codes)
-	    gen_images_summary = tf.summary.image('gen_images', self.fake_images,max_outputs=6)
+	    gen_images_summary = tf.summary.image('gen_images', self.fake_images,max_outputs=10)
 	    
 	    self.logits_fake, self.Q_logits = self.D(self.fake_images)
 	    

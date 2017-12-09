@@ -43,7 +43,7 @@ class Solver(object):
 	    
     def train(self):
 	
-	print 'Training..'
+	print 'Training...'
         # load mnist dataset
 	self.load_data()
         
@@ -102,7 +102,49 @@ class Solver(object):
 		    print 'avg_D_fake',str(avg_D_fake.mean()),'avg_D_real',str(avg_D_real.mean())
 		    
 		if (t+1) % 1000 == 0:  
-		    saver.save(sess, os.path.join(self.model_save_path, 'sampler')) 
+		    saver.save(sess, os.path.join(self.model_save_path, 'model')) 
+
+
+    def test(self):
+	
+	print 'Testing...'
+                
+	if tf.gfile.Exists(self.log_dir+'/test'):
+            tf.gfile.DeleteRecursively(self.log_dir+'/test')
+        tf.gfile.MakeDirs(self.log_dir+'/test')
+	if not tf.gfile.Exists(self.model_save_path):
+	    print('No model to test')
+	    return -1
+	    
+        # build a graph
+        model = self.model
+        model.build_model()
+	
+	with tf.Session(config=self.config) as sess:
+	    
+	    summary_writer = tf.summary.FileWriter(logdir=self.log_dir+'/test', graph=tf.get_default_graph())
+	    
+	    print ('Loading test model.')
+	    variables_to_restore = slim.get_model_variables()
+	    restorer = tf.train.Saver(variables_to_restore)
+	    restorer.restore(sess, self.model_save_path+'/model')
+	    print ('Done!')
+	
+	    while(True):
+		# batch is same size as number of classes here
+		batch_size = model.n_cat_codes
+		input_noise = utils.sample_Z(batch_size, model.noise_dim, 'uniform')
+			
+		if model.n_cat_codes > 0:
+		    input_cat = np.eye(model.n_cat_codes)
+		    feed_dict = {model.noise: input_noise, model.cat_codes: input_cat}
+		else:
+		    feed_dict = {model.noise: input_noise}
+		
+		summary, preds, imgs = sess.run([model.summary_op, model.pred, model.fake_images], feed_dict)
+		summary_writer.add_summary(summary)
+		print(preds)
+	    
 
 if __name__=='__main__':
     
