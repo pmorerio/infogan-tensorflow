@@ -5,7 +5,7 @@ from utils import lrelu
 
 class infogan(object):
 
-    def __init__(self, mode='train',noise_dim=100,n_cat_codes=0,n_cont_codes=0,
+    def __init__(self, mode='train',noise_dim=50,n_cat_codes=0,n_cont_codes=0,
 		    learning_rate=0.0001, lambda_cat=0.1, lambda_cont=0.1):
         self.mode = mode
         self.learning_rate = learning_rate 
@@ -101,6 +101,15 @@ class infogan(object):
 		self.Q_loss_cat = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(\
 						labels=self.cat_codes, 
 						logits=self.Q_logits))
+		self.pred = tf.argmax(tf.nn.softmax(self.Q_logits))
+		self.correct_prediction = tf.equal(tf.argmax(self.pred), tf.argmax(self.cat_codes))
+		#correct_prediction = tf.equal(tf.nn.top_k(y_conv,2)[1], tf.nn.top_k(y_,2)[1])
+		self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
+		
+		Q_loss_cat_summary = tf.summary.scalar('Q_loss_cat', self.Q_loss_cat)
+		acc_summary = tf.summary.scalar('acc_cat', self.accuracy)
+		
+
 	    else:
 		self.Q_loss_cat = 0
 	    
@@ -111,7 +120,6 @@ class infogan(object):
 	    
 	    self.D_loss = self.D_loss_real + self.D_loss_fake 
 	    self.G_loss = tf.reduce_mean(tf.square(self.logits_fake - tf.ones_like(self.logits_real)))
-	    
 	    
 	    # Optimizers (DC-GAN paper says momentum=0.5)
 	    
@@ -133,8 +141,6 @@ class infogan(object):
             # Summary ops
 	    
             G_loss_summary = tf.summary.scalar('G_loss', self.G_loss)
-	    if self.n_cat_codes > 0:
-		Q_loss_cat_summary = tf.summary.scalar('Q_loss_cat', self.Q_loss_cat)
             D_loss_summary = tf.summary.scalar('D_loss', self.D_loss)
             D_loss_real_summary = tf.summary.scalar('D_loss_real', self.D_loss_real)
             D_loss_fake_summary = tf.summary.scalar('D_loss_fake', self.D_loss_fake)
@@ -172,6 +178,7 @@ class infogan(object):
 	    self.logits_fake, self.Q_logits = self.D(self.fake_images)
 	    
 	    self.pred = tf.argmax(tf.nn.softmax(self.Q_logits))
+	    
 	    
 	    self.summary_op = tf.summary.merge_all()
 

@@ -87,14 +87,13 @@ class Solver(object):
 				    model.images: self.train_data[start:end]}
 		else:
 		    feed_dict = {model.noise: input_noise, model.images: self.train_data[start:end]}
-	
-		avg_D_fake = sess.run(model.logits_fake, feed_dict)
-		avg_D_real = sess.run(model.logits_real, feed_dict)
 		
 		sess.run(model.D_train_op, feed_dict)
 		sess.run(model.G_train_op, feed_dict)
 		
 		if (t+1) % 100 == 0:
+		    avg_D_fake = sess.run(model.logits_fake, feed_dict)
+		    avg_D_real = sess.run(model.logits_real, feed_dict)
 		    summary, dl, gl = sess.run([model.summary_op, model.D_loss, model.G_loss], feed_dict)
 		    summary_writer.add_summary(summary, t)
 		    print ('Step: [%d/%d] \n G_loss: [%.6f] D_loss: [%.6f]' \
@@ -130,6 +129,7 @@ class Solver(object):
 	    restorer.restore(sess, self.model_save_path+'/model')
 	    print ('Done!')
 	
+	    t=0
 	    while(True):
 		# batch is same size as number of classes here
 		batch_size = model.n_cat_codes
@@ -142,8 +142,9 @@ class Solver(object):
 		    feed_dict = {model.noise: input_noise}
 		
 		summary, preds, imgs = sess.run([model.summary_op, model.pred, model.fake_images], feed_dict)
-		summary_writer.add_summary(summary)
+		summary_writer.add_summary(summary,t)
 		print(preds)
+		t+=1
 	    
 
 if __name__=='__main__':
