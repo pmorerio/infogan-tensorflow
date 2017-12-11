@@ -102,7 +102,7 @@ class infogan(object):
 						labels=self.cat_codes, 
 						logits=self.Q_logits))
 		self.pred = tf.argmax(tf.nn.softmax(self.Q_logits))
-		self.correct_prediction = tf.equal(self.preds, tf.argmax(self.cat_codes,1))
+		self.correct_prediction = tf.equal(self.pred, tf.argmax(self.cat_codes,1))
 		#correct_prediction = tf.equal(tf.nn.top_k(y_conv,2)[1], tf.nn.top_k(y_,2)[1])
 		self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
 		
