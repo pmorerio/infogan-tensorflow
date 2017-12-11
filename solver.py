@@ -12,7 +12,7 @@ class Solver(object):
 
     def __init__(self, model, batch_size=32,  model_save_path='model', 
 		    log_dir='logs', data_dir='/data/datasets/mnist',
-		    train_iter=1000000):
+		    train_iter=30000):
         
         self.model = model
         self.batch_size = batch_size
