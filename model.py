@@ -82,6 +82,8 @@ class infogan(object):
 	    self.noise = tf.placeholder(tf.float32, [None, self.noise_dim], 'noise')
 	    if self.n_cat_codes > 0:
 		self.cat_codes = tf.placeholder(tf.float32, [None, self.n_cat_codes], 'cat_codes')
+		self.lambda_cat_ph = tf.placeholder(tf.float32, name='lambda_cat_codes')
+		lambda_cat_summary = tf.summary.scalar('lambda_cat', self.lambda_cat_ph)
 	    else:
 		self.cat_codes = None
 		
@@ -135,7 +137,7 @@ class infogan(object):
 	    
             with tf.variable_scope('training_op',reuse=False):
                 self.D_train_op = slim.learning.create_train_op(self.D_loss, self.D_optimizer, variables_to_train=D_vars)
-		self.G_train_op = slim.learning.create_train_op(self.G_loss + self.lambda_cat * self.Q_loss_cat, self.G_optimizer, variables_to_train=G_vars)
+		self.G_train_op = slim.learning.create_train_op(self.G_loss + self.lambda_cat_ph * self.Q_loss_cat, self.G_optimizer, variables_to_train=G_vars)
             
             
             # Summary ops

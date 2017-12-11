@@ -58,7 +58,8 @@ class Solver(object):
 	if not tf.gfile.Exists(self.model_save_path):
 	    tf.gfile.MakeDirs(self.model_save_path)
 	
-	
+	def _lambda_cat(time, gamma=1e-5):
+            return model.lambda_cat * (1. - np.exp(-gamma*time))
 
 
         with tf.Session(config=self.config) as sess:
@@ -74,7 +75,6 @@ class Solver(object):
 	    
             for step in range(self.train_iter):
 
-                t+=1
                 i = step % int(self.train_data.shape[0] / self.batch_size)
 		start = i*self.batch_size
 		end = (i+1)*self.batch_size
@@ -83,26 +83,28 @@ class Solver(object):
 		
 		if model.n_cat_codes > 0:
 		    input_cat = utils.sample_cat(self.batch_size, model.n_cat_codes)
+		    
 		    feed_dict = {model.noise: input_noise, model.cat_codes: input_cat,
-				    model.images: self.train_data[start:end]}
+				    model.images: self.train_data[start:end],
+				    model.lambda_cat_ph: _lambda_cat(t)}
 		else:
 		    feed_dict = {model.noise: input_noise, model.images: self.train_data[start:end]}
 		
-		sess.run(model.D_train_op, feed_dict)
-		sess.run(model.G_train_op, feed_dict)
-		
-		if (t+1) % 100 == 0:
+		if (t) % 100 == 0:
 		    avg_D_fake = sess.run(model.logits_fake, feed_dict)
 		    avg_D_real = sess.run(model.logits_real, feed_dict)
 		    summary, dl, gl = sess.run([model.summary_op, model.D_loss, model.G_loss], feed_dict)
 		    summary_writer.add_summary(summary, t)
 		    print ('Step: [%d/%d] \n G_loss: [%.6f] D_loss: [%.6f]' \
-			       %(t+1, self.train_iter, gl, dl))
+			       %(t, self.train_iter, gl, dl))
 		    print 'avg_D_fake',str(avg_D_fake.mean()),'avg_D_real',str(avg_D_real.mean())
 		    
-		if (t+1) % 1000 == 0:  
+		if (t) % 1000 == 0:  
 		    saver.save(sess, os.path.join(self.model_save_path, 'model')) 
-
+		
+		sess.run(model.D_train_op, feed_dict)
+		sess.run(model.G_train_op, feed_dict)
+		t+=1
 
     def test(self):
 	
