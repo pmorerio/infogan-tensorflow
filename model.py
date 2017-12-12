@@ -37,9 +37,9 @@ class infogan(object):
 		    net = slim.batch_norm(net, scope='bn1')
                     net = slim.conv2d_transpose(net, 128, [7, 7], padding='VALID', scope='conv_transpose1')   # (batch_size, 7, 7, x)
                     net = slim.batch_norm(net, scope='bn_conv_transpose1')
-                    net = slim.conv2d_transpose(net, 64, [3, 3], scope='conv_transpose2')  # (batch_size, 14, 14, x)
+                    net = slim.conv2d_transpose(net, 64, [4, 4], scope='conv_transpose2')  # (batch_size, 14, 14, x)
                     net = slim.batch_norm(net, scope='bn_conv_transpose2')
-		    net = slim.conv2d_transpose(net, 1, [3, 3], activation_fn=tf.nn.tanh, scope='conv_transpose3')  # (batch_size, 28, 28, 1)
+		    net = slim.conv2d_transpose(net, 1, [4, 4], activation_fn=tf.nn.tanh, scope='conv_transpose3')  # (batch_size, 28, 28, 1)
 		    return net
 	    
 	    
@@ -59,7 +59,6 @@ class infogan(object):
 		    net=slim.flatten(net)
                     net = slim.fully_connected(net, 1024, scope='fc1') 
 		    net = slim.batch_norm(net, scope='bn_fc1')
-
 		    G = slim.fully_connected(net,1, activation_fn=tf.sigmoid, scope='sigmoid') 
 
 		    dim_q = self.n_cat_codes+ 2* self.n_cont_codes
@@ -68,7 +67,7 @@ class infogan(object):
 		    else:
 			Q = slim.fully_connected(net,128, scope='q_fc1')
 			Q = slim.batch_norm(Q, scope='bn_q_fc1')
-			Q = slim.fully_connected(net,dim_q ,activation_fn=None, scope='q_out') 
+			Q = slim.fully_connected(Q,dim_q ,activation_fn=None, scope='q_out') 
 			return G, Q
 
 
