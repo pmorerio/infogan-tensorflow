@@ -124,8 +124,8 @@ class infogan(object):
 	    
 	    # Optimizers (DC-GAN paper says momentum=0.5)
 	    
-            self.D_optimizer = tf.train.AdamOptimizer(self.learning_rate * 2, beta1=0.5) 
-            self.G_optimizer = tf.train.AdamOptimizer(self.learning_rate * 10,beta1=0.5)
+            self.D_optimizer = tf.train.AdamOptimizer(self.learning_rate, beta1=0.5) 
+            self.G_optimizer = tf.train.AdamOptimizer(self.learning_rate,beta1=0.5)
             
             t_vars = tf.trainable_variables()
             G_vars = [var for var in t_vars if 'generator' in var.name]
