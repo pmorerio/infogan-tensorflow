@@ -6,7 +6,7 @@ from utils import lrelu
 class infogan(object):
 
     def __init__(self, mode='train',noise_dim=50,n_cat_codes=0,n_cont_codes=0,
-		    learning_rate=0.0001, lambda_cat=0.1, lambda_cont=0.1):
+		    learning_rate=0.0001, lambda_cat=1., lambda_cont=0.1):
         self.mode = mode
         self.learning_rate = learning_rate 
 	self.n_cont_codes = n_cont_codes
@@ -124,8 +124,8 @@ class infogan(object):
 	    
 	    # Optimizers (DC-GAN paper says momentum=0.5)
 	    
-            self.D_optimizer = tf.train.AdamOptimizer(self.learning_rate,beta1=0.5) 
-            self.G_optimizer = tf.train.AdamOptimizer(self.learning_rate,beta1=0.5)
+            self.D_optimizer = tf.train.AdamOptimizer(self.learning_rate * 2, beta1=0.5) 
+            self.G_optimizer = tf.train.AdamOptimizer(self.learning_rate * 10,beta1=0.5)
             
             t_vars = tf.trainable_variables()
             G_vars = [var for var in t_vars if 'generator' in var.name]
