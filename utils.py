@@ -14,7 +14,7 @@ def sample_cat(m,n):
     cat = npr.randint(0,n, size=m)
     out = np.zeros((m,n))
     out[np.arange(m),cat]=1
-    return out
+    return out.astype(float)
 
 def lrelu(input, leak=0.2, scope='lrelu'):
     
