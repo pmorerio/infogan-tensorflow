@@ -52,12 +52,12 @@ class infogan(object):
                 with slim.arg_scope([slim.batch_norm], decay=0.95, center=True, scale=True, 
                                     activation_fn=lrelu, is_training=(self.mode=='train')):
                     
-                    net = slim.conv2d(images, 64, [4, 4], stride=2, scope='conv1')   
+                    net = slim.conv2d(images, 64, [4, 4], activation_fn=lrelu, stride=2, scope='conv1')   
                     #~ net = slim.batch_norm(net, scope='bn1')
                     net = slim.conv2d(net, 128, [4, 4],stride=2, scope='conv2')  
                     net = slim.batch_norm(net, scope='bn2') 
-		    net=slim.flatten(net)
-                    net = slim.fully_connected(net, 1024, scope='fc1') 
+		    net = slim.flatten(net)
+                    net = slim.fully_connected(net, 1024, activation_fn=None, scope='fc1') 
 		    net = slim.batch_norm(net, scope='bn_fc1')
 		    G = slim.fully_connected(net,1, activation_fn=tf.sigmoid, scope='sigmoid') 
 
@@ -65,7 +65,7 @@ class infogan(object):
 		    if dim_q==0:
 			return G, None
 		    else:
-			Q = slim.fully_connected(net,128, scope='q_fc1')
+			Q = slim.fully_connected(net,128, activation_fn=None, scope='q_fc1')
 			Q = slim.batch_norm(Q, scope='bn_q_fc1')
 			Q = slim.fully_connected(Q,dim_q ,activation_fn=None, scope='q_out') 
 			return G, Q
