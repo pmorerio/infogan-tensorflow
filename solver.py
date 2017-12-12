@@ -85,8 +85,8 @@ class Solver(object):
 		    input_cat = utils.sample_cat(self.batch_size, model.n_cat_codes)
 		    
 		    feed_dict = {model.noise: input_noise, model.cat_codes: input_cat,
-				    model.images: self.train_data[start:end],
-				    model.lambda_cat_ph: _lambda_cat(t)}
+				    model.images: self.train_data[start:end]}
+				    #~ model.lambda_cat_ph: _lambda_cat(t)}
 		else:
 		    feed_dict = {model.noise: input_noise, model.images: self.train_data[start:end]}
 		
