@@ -33,7 +33,7 @@ class infogan(object):
                 with slim.arg_scope([slim.batch_norm], decay=0.95, center=True, scale=True, 
                                      activation_fn=tf.nn.relu, is_training=(self.mode=='train')):
 
-		    net = slim.conv2d(inputs,2048,[1,1],scope='fc1')#FC1
+		    net = slim.conv2d(inputs,1024,[1,1],scope='fc1')#FC1
 		    net = slim.batch_norm(net, scope='bn1')
                     net = slim.conv2d_transpose(net, 128, [7, 7], padding='VALID', scope='conv_transpose1')  
                     net = slim.batch_norm(net, scope='bn_conv_transpose1')
