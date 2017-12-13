@@ -12,7 +12,7 @@ class Solver(object):
 
     def __init__(self, model, batch_size=32,  model_save_path='model', 
 		    log_dir='logs', data_dir='/data/datasets/mnist',
-		    train_iter=500000):
+		    train_iter=20000):
         
         self.model = model
         self.batch_size = batch_size
@@ -30,13 +30,12 @@ class Solver(object):
 	self.config.allow_soft_placement=True
 
     def load_data(self):
-	#original data is in [0:1], rescale to [-1,1]
 	mnist = input_data.read_data_sets(self.data_dir, one_hot=True)
-	self.train_data = mnist.train.images.reshape(((len(mnist.train.labels),28,28,1)))*2. - 1.
+	self.train_data = mnist.train.images.reshape(((len(mnist.train.labels),28,28,1)))#*2. - 1.
 	self.train_labels = mnist.train.labels
-	self.test_data = mnist.test.images.reshape(((len(mnist.test.labels),28,28,1)))*2. - 1.
+	self.test_data = mnist.test.images.reshape(((len(mnist.test.labels),28,28,1)))#*2. - 1.
 	self.test_labels = mnist.test.labels
-	self.val_data = mnist.validation.images.reshape(((len(mnist.validation.labels),28,28,1)))*2. - 1.
+	self.val_data = mnist.validation.images.reshape(((len(mnist.validation.labels),28,28,1)))#*2. - 1.
 	self.val_labels = mnist.train.labels
 	mnist = None
 	    
@@ -90,7 +89,7 @@ class Solver(object):
 		else:
 		    feed_dict = {model.noise: input_noise, model.images: self.train_data[start:end]}
 		
-		if (t) % 100 == 0:
+		if (t) % 200 == 0:
 		    avg_D_fake = sess.run(model.logits_fake, feed_dict)
 		    avg_D_real = sess.run(model.logits_real, feed_dict)
 		    summary, dl, gl = sess.run([model.summary_op, model.D_loss, model.G_loss], feed_dict)
@@ -99,7 +98,7 @@ class Solver(object):
 			       %(t, self.train_iter, gl, dl))
 		    print 'avg_D_fake',str(avg_D_fake.mean()),'avg_D_real',str(avg_D_real.mean())
 		    
-		if (t) % 1000 == 0:  
+		if (t) % 2000 == 0:  
 		    saver.save(sess, os.path.join(self.model_save_path, 'model')) 
 		
 		sess.run(model.D_train_op, feed_dict)
