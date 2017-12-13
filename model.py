@@ -58,9 +58,11 @@ class infogan(object):
                     net = slim.conv2d(net, 128, [4, 4],stride=2, scope='conv2')  
                     net = slim.batch_norm(net, scope='bn2') 
 		    net = slim.flatten(net)
-                    net = slim.fully_connected(net, 256, activation_fn=None, scope='fc1') 
-		    net = slim.batch_norm(net, scope='bn_fc1')
+                    net = slim.fully_connected(net, 512, activation_fn=None, scope='fc1') 
+		   
 		    net = slim.dropout(net,0.5, is_training=(self.mode=='train'))
+		    net = slim.batch_norm(net, scope='bn_fc1')
+		    
 		    G = slim.fully_connected(net,1, activation_fn=tf.sigmoid, scope='sigmoid') 
 
 		    dim_q = self.n_cat_codes+ 2* self.n_cont_codes
