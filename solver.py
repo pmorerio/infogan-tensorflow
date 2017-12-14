@@ -12,7 +12,7 @@ class Solver(object):
 
     def __init__(self, model, batch_size=32,  model_save_path='model', 
 		    log_dir='logs', data_dir='/data/datasets/mnist',
-		    train_iter=300000):
+		    train_iter=20000):
         
         self.model = model
         self.batch_size = batch_size
@@ -81,7 +81,7 @@ class Solver(object):
 		input_noise = utils.sample_Z(self.batch_size, model.noise_dim, 'uniform')
 		
 		if model.n_cat_codes > 0:
-		    input_cat = utils.sample_cat(self.batch_size, model.n_cat_codes)
+		    input_cat = utils.sample_attributes(self.batch_size, model.n_cat_codes)
 		    
 		    feed_dict = {model.noise: input_noise, model.cat_codes: input_cat,
 				    model.images: self.train_data[start:end]}
@@ -132,20 +132,45 @@ class Solver(object):
 	
 	    t=0
 	    while(True):
+		print(t)
 		# batch is same size as number of classes here
 		batch_size = model.n_cat_codes
 		input_noise = utils.sample_Z(batch_size, model.noise_dim, 'uniform')
 			
 		if model.n_cat_codes > 0:
-		    input_cat = np.eye(model.n_cat_codes)
+		    #~ input_cat = np.asarray([[0,0,0,0,0,1,1,1,1,1],
+					    #~ [1,1,1,1,1,1,1,1,1,1],
+					    #~ [1,0,0,0,0,0,0,0,0,0],
+					    #~ [0,1,0,0,0,0,0,0,0,0],
+					    #~ [1,1,0,0,0,0,0,0,0,0],
+					    #~ [0,0,0,0,0,0,0,0,0,0],
+					    #~ [0,0,0,0,0,0,0,0,0,0.25],
+					    #~ [0,0,0,0,0,0,0,0,0,.5],
+					    #~ [0,0,0,0,0,0,0,0,0,0.75],
+					    #~ [0,0,0,0,0,0,0,0,0,1]]).astype(float)
+		    input_cat = np.asarray([[0,0,0,0,0,0,0,0,0,0],
+					    [1,0,0,0,0,0,0,0,0,0],
+					    [1,1,0,0,0,0,0,0,0,0],
+					    [1,1,1,0,0,0,0,0,0,0],
+					    [1,1,1,1,0,0,0,0,0,0],
+					    [1,1,1,1,1,0,0,0,0,0],
+					    [1,1,1,1,1,1,0,0,0,0],
+					    [1,1,1,1,1,1,1,0,0,0],
+					    [1,1,1,1,1,1,1,1,0,0],
+					    [1,1,1,1,1,1,1,1,1,0]]).astype(float)
+		    #~ input_cat = np.zeros((model.n_cat_codes,model.n_cat_codes))
+		    #~ input_cat = np.eye(model.n_cat_codes)
+		    #~ print(input_cat)
 		    feed_dict = {model.noise: input_noise, model.cat_codes: input_cat}
 		else:
 		    feed_dict = {model.noise: input_noise}
 		
 		summary, preds, imgs = sess.run([model.summary_op, model.pred, model.fake_images], feed_dict)
-		summary_writer.add_summary(summary,t)
-		print(preds)
+		summary_writer.add_summary(summary, t)
+		print(np.round(preds))
 		t+=1
+		if t==1000:
+		    break
 	    
 
 if __name__=='__main__':
