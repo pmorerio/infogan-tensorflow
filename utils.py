@@ -15,6 +15,12 @@ def sample_cat(m,n):
     out = np.zeros((m,n))
     out[np.arange(m),cat]=1
     return out.astype(float)
+    
+def sample_attribute(m):
+    
+    #random int 0 or 1
+    out = npr.randint(0,2, size=m)
+    return out.astype(float)
 
 def lrelu(input, leak=0.2, scope='lrelu'):
     
