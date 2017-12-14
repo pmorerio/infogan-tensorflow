@@ -59,20 +59,21 @@ class infogan(object):
                     net = slim.batch_norm(net, scope='bn2') 
 		    net = slim.flatten(net)
                     net = slim.fully_connected(net, 512, activation_fn=None, scope='fc1') 
-		   
 		    net = slim.dropout(net,0.5, is_training=(self.mode=='train'))
 		    net = slim.batch_norm(net, scope='bn_fc1')
+		    G = slim.fully_connected(net,1, activation_fn=tf.sigmoid, scope='G_sigmoid') 
 		    
-		    G = slim.fully_connected(net,1, activation_fn=tf.sigmoid, scope='sigmoid') 
-
-		    dim_q = self.n_cat_codes+ 2* self.n_cont_codes
-		    if dim_q==0:
-			return G, None
-		    else:
-			Q = slim.fully_connected(net,128, activation_fn=None, scope='q_fc1')
-			Q = slim.batch_norm(Q, scope='bn_q_fc1')
-			Q = slim.fully_connected(Q,dim_q ,activation_fn=None, scope='q_out') 
-			return G, Q
+	dim_q = self.n_cat_codes+ 2* self.n_cont_codes
+	if dim_q==0:
+	    return G, None
+	else:
+	    with tf.variable_scope('mutual_info', reuse=reuse):
+		with slim.arg_scope([slim.batch_norm], decay=0.95, center=True, scale=True, 
+                                    activation_fn=lrelu, is_training=(self.mode=='train')):
+		    Q = slim.fully_connected(net,128, activation_fn=None, scope='q_fc1')
+		    Q = slim.batch_norm(Q, scope='bn_q_fc1')
+		    Q = slim.fully_connected(Q,dim_q ,activation_fn=None, scope='q_out') 
+		    return G, Q
 
 
     def build_model(self):
@@ -85,8 +86,6 @@ class infogan(object):
 	    self.noise = tf.placeholder(tf.float32, [None, self.noise_dim], 'noise')
 	    if self.n_cat_codes > 0:
 		self.cat_codes = tf.placeholder(tf.float32, [None, self.n_cat_codes], 'cat_codes')
-		#~ self.lambda_cat_ph = tf.placeholder(tf.float32, name='lambda_cat_codes')
-		#~ lambda_cat_summary = tf.summary.scalar('lambda_cat', self.lambda_cat_ph)
 	    else:
 		self.cat_codes = None
 		
@@ -108,7 +107,6 @@ class infogan(object):
 						logits=self.Q_logits))
 		self.pred = tf.argmax(tf.nn.softmax(self.Q_logits),1)
 		self.correct_prediction = tf.equal(self.pred, tf.argmax(self.cat_codes,1))
-		#correct_prediction = tf.equal(tf.nn.top_k(y_conv,2)[1], tf.nn.top_k(y_,2)[1])
 		self.accuracy = tf.reduce_mean(tf.cast(self.correct_prediction, tf.float32))
 		
 		Q_loss_cat_summary = tf.summary.scalar('Q_loss_cat', self.Q_loss_cat)
@@ -134,13 +132,15 @@ class infogan(object):
             t_vars = tf.trainable_variables()
             G_vars = [var for var in t_vars if 'generator' in var.name]
             D_vars = [var for var in t_vars if 'discriminator' in var.name]
+	    Q_vars = [var for var in t_vars if 'G_sigmoid' not in var.name]
             
             
 	    # Train ops
 	    
             with tf.variable_scope('training_op',reuse=False):
                 self.D_train_op = slim.learning.create_train_op(self.D_loss, self.D_optimizer, variables_to_train=D_vars)
-		self.G_train_op = slim.learning.create_train_op(self.G_loss + self.lambda_cat* self.Q_loss_cat, self.G_optimizer, variables_to_train=G_vars)
+		self.G_train_op = slim.learning.create_train_op(self.G_loss, self.G_optimizer, variables_to_train=G_vars)
+		self.Q_train_op = slim.learning.create_train_op(self.lambda_cat * self.Q_loss_cat, self.G_optimizer, variables_to_train=Q_vars)
             
             
             # Summary ops

@@ -12,7 +12,7 @@ class Solver(object):
 
     def __init__(self, model, batch_size=32,  model_save_path='model', 
 		    log_dir='logs', data_dir='/data/datasets/mnist',
-		    train_iter=30000):
+		    train_iter=300000):
         
         self.model = model
         self.batch_size = batch_size
@@ -57,7 +57,7 @@ class Solver(object):
 	if not tf.gfile.Exists(self.model_save_path):
 	    tf.gfile.MakeDirs(self.model_save_path)
 	
-	def _lambda_cat(time, gamma=1e-5):
+	def _lambda_cat(time, gamma=1e-4):
             return model.lambda_cat * (1. - np.exp(-gamma*time))
 
 
@@ -85,7 +85,6 @@ class Solver(object):
 		    
 		    feed_dict = {model.noise: input_noise, model.cat_codes: input_cat,
 				    model.images: self.train_data[start:end]}
-				    #~ model.lambda_cat_ph: _lambda_cat(t)}
 		else:
 		    feed_dict = {model.noise: input_noise, model.images: self.train_data[start:end]}
 		
@@ -103,6 +102,7 @@ class Solver(object):
 		
 		sess.run(model.D_train_op, feed_dict)
 		sess.run(model.G_train_op, feed_dict)
+		sess.run(model.Q_train_op, feed_dict)
 		t+=1
 
     def test(self):
