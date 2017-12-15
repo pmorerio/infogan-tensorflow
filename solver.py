@@ -12,7 +12,7 @@ class Solver(object):
 
     def __init__(self, model, batch_size=32,  model_save_path='model', 
 		    log_dir='logs', data_dir='/data/datasets/mnist',
-		    train_iter=300000):
+		    train_iter=20000):
         
         self.model = model
         self.batch_size = batch_size
@@ -57,8 +57,8 @@ class Solver(object):
 	if not tf.gfile.Exists(self.model_save_path):
 	    tf.gfile.MakeDirs(self.model_save_path)
 	
-	def _lambda_cat(time, gamma=1e-4):
-            return model.lambda_cat * (1. - np.exp(-gamma*time))
+	#~ def _lambda_cat(time, gamma=1e-4):
+            #~ return model.lambda_cat * (1. - np.exp(-gamma*time))
 
 
         with tf.Session(config=self.config) as sess:
@@ -134,7 +134,8 @@ class Solver(object):
 	    while(True):
 		# batch is same size as number of classes here
 		batch_size = model.n_cat_codes
-		input_noise = utils.sample_Z(batch_size, model.noise_dim, 'uniform')
+		noise = utils.sample_Z(1, model.noise_dim, 'uniform')
+		input_noise = np.concatenate([noise for i in range(batch_size)], axis=0)
 			
 		if model.n_cat_codes > 0:
 		    input_cat = np.eye(model.n_cat_codes)
