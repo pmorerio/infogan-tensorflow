@@ -135,7 +135,8 @@ class Solver(object):
 		print(t)
 		# batch is same size as number of classes here
 		batch_size = model.n_cat_codes
-		input_noise = utils.sample_Z(batch_size, model.noise_dim, 'uniform')
+		noise = utils.sample_Z(1, model.noise_dim, 'uniform')
+		input_noise = np.concatenate([noise for i in range(batch_size)], axis=0)
 			
 		if model.n_cat_codes > 0:
 		    #~ input_cat = np.asarray([[0,0,0,0,0,1,1,1,1,1],
@@ -148,16 +149,12 @@ class Solver(object):
 					    #~ [0,0,0,0,0,0,0,0,0,.5],
 					    #~ [0,0,0,0,0,0,0,0,0,0.75],
 					    #~ [0,0,0,0,0,0,0,0,0,1]]).astype(float)
-		    input_cat = np.asarray([[0,0,0,0,0,0,0,0,0,0],
-					    [1,0,0,0,0,0,0,0,0,0],
-					    [1,1,0,0,0,0,0,0,0,0],
-					    [1,1,1,0,0,0,0,0,0,0],
-					    [1,1,1,1,0,0,0,0,0,0],
-					    [1,1,1,1,1,0,0,0,0,0],
-					    [1,1,1,1,1,1,0,0,0,0],
-					    [1,1,1,1,1,1,1,0,0,0],
-					    [1,1,1,1,1,1,1,1,0,0],
-					    [1,1,1,1,1,1,1,1,1,0]]).astype(float)
+		    input_cat = np.asarray([[1,1,1,1,1],
+					    [0,0,0,0,0],
+					    [0,0,0,0,1],
+					    [1,0,1,0,0],
+					    [1,0,1,0,1],
+					    ]).astype(float)
 		    #~ input_cat = np.zeros((model.n_cat_codes,model.n_cat_codes))
 		    #~ input_cat = np.eye(model.n_cat_codes)
 		    #~ print(input_cat)
