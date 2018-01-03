@@ -36,7 +36,7 @@ class Solver(object):
 	self.test_data = mnist.test.images.reshape(((len(mnist.test.labels),28,28,1)))#*2. - 1.
 	self.test_labels = mnist.test.labels
 	self.val_data = mnist.validation.images.reshape(((len(mnist.validation.labels),28,28,1)))#*2. - 1.
-	self.val_labels = mnist.train.labels
+	self.val_labels = mnist.validation.labels
 	mnist = None
 	    
 	    
@@ -134,7 +134,7 @@ class Solver(object):
 	    while(True):
 		print(t)
 		# batch is same size as number of classes here
-		batch_size = model.n_cat_codes
+		batch_size = 3#model.n_cat_codes
 		noise = utils.sample_Z(1, model.noise_dim, 'uniform')
 		input_noise = np.concatenate([noise for i in range(batch_size)], axis=0)
 			
@@ -149,14 +149,16 @@ class Solver(object):
 					    #~ [0,0,0,0,0,0,0,0,0,.5],
 					    #~ [0,0,0,0,0,0,0,0,0,0.75],
 					    #~ [0,0,0,0,0,0,0,0,0,1]]).astype(float)
-		    input_cat = np.asarray([[1,1,1,1,1],
-					    [0,0,0,0,0],
-					    [0,0,0,0,1],
-					    [1,0,1,0,0],
-					    [1,0,1,0,1],
-					    ]).astype(float)
+		    #~ input_cat = np.asarray([[1,1,1,1,1],
+					    #~ [0,0,0,0,0],
+					    #~ [0,0,0,0,1],
+					    #~ [1,0,1,0,0],
+					    #~ [1,0,1,0,1],
+					    #~ ]).astype(float)
 		    #~ input_cat = np.zeros((model.n_cat_codes,model.n_cat_codes))
 		    #~ input_cat = np.eye(model.n_cat_codes)
+		    input_cat = np.asarray([[1],[0.5], [0]]).astype(float)
+		    
 		    #~ print(input_cat)
 		    feed_dict = {model.noise: input_noise, model.cat_codes: input_cat}
 		else:
