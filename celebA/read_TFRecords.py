@@ -31,6 +31,10 @@ attributes = tf.reshape(attributes, [40])
 imgs, attribs = tf.train.shuffle_batch([image, attributes], batch_size=16, capacity=30, num_threads=4,
 					      min_after_dequeue=10, allow_smaller_final_batch=False)
 
+attr_file = open(dataDir+'/Anno/list_attr_celeba.txt')
+n_images = int(attr_file.readline())
+att_names = attr_file.readline().split()
+print att_names
 
 with tf.Session() as sess:
 
@@ -48,10 +52,12 @@ with tf.Session() as sess:
             print('exit')
             break
         img = img.astype(np.uint8)
-	print att
         for j in range(4):
             plt.subplot(4, 1, j+1)
             plt.imshow(img[j, ...])
+	    a = np.asarray(att[j],dtype=int)
+	    print [att_names[i] for i in np.where(a==1)[0]]
+	print '----------------------'
         plt.show()
     # Stop the threads
     coord.request_stop()

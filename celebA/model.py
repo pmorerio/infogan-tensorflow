@@ -5,20 +5,24 @@ from utils import lrelu
 
 class attrGAN(object):
 
-    def __init__(self, mode='train',noise_dim=50,n_cat_codes=0,n_cont_codes=0,
+    def __init__(self, mode='train',noise_dim=50,n_attributes=40,n_cont_codes=0,
 		    learning_rate=0.0001, lambda_cat=1., lambda_cont=0.1):
         self.mode = mode
         self.learning_rate = learning_rate 
 	self.n_cont_codes = n_cont_codes
-	self.n_cat_codes = n_cat_codes
+	self.n_attributes = n_attributes
 	self.noise_dim = noise_dim
 	self.lambda_cat = lambda_cat
 	self.lambda_cont = lambda_cont 
-	    
-    def G(self, inputs, cat_codes, cont_codes, reuse=False):
+    
+        
+    
+    
+    
+    def G(self, inputs, attributes, cont_codes, reuse=False):
 	
-	if cat_codes is not None: 
-	    inputs = tf.concat([inputs,cat_codes], axis=-1)
+	if attributes is not None: 
+	    inputs = tf.concat([inputs,attributes], axis=-1)
 	if cont_codes is not None:
 	    inputs = tf.concat([inputs,cont_codes], axis=-1)
 	
@@ -39,14 +43,13 @@ class attrGAN(object):
                     net = slim.batch_norm(net, scope='bn_conv_transpose1')
                     net = slim.conv2d_transpose(net, 64, [4, 4], scope='conv_transpose2')  
                     net = slim.batch_norm(net, scope='bn_conv_transpose2')
-		    net = slim.conv2d_transpose(net, 1, [4, 4], activation_fn=tf.nn.sigmoid, scope='conv_transpose3')  
+		    net = slim.conv2d_transpose(net, 3, [4, 4], activation_fn=tf.nn.sigmoid, scope='conv_transpose3')  
     
 		    return net
 	    
 	    
     def D(self, images, reuse=False): # D has actually two heads D & Q
 	
-        # images: (batch, 28 28, 1)
         with tf.variable_scope('discriminator', reuse=reuse):
             with slim.arg_scope([slim.conv2d], padding='SAME', activation_fn=None,
                                  stride=2,  weights_initializer=tf.contrib.layers.xavier_initializer()):
@@ -63,7 +66,7 @@ class attrGAN(object):
 		    net = slim.batch_norm(net, scope='bn_fc1')
 		    G = slim.fully_connected(net,1, activation_fn=tf.sigmoid, scope='G_sigmoid') 
 		    
-	dim_q = self.n_cat_codes+ 2* self.n_cont_codes
+	dim_q = self.n_attributes+ 2* self.n_cont_codes
 	if dim_q==0:
 	    return G, None
 	else:
@@ -76,33 +79,24 @@ class attrGAN(object):
 		    return G, Q
 
 
-    def build_model(self):
+    def build_model(self, inputs):
         
 	if self.mode == 'train':
 	    print('Building model')
 	    
 	    # Placeholders for noise, codes and images
-	    
-	    self.noise = tf.placeholder(tf.float32, [None, self.noise_dim], 'noise')
-	    if self.n_cat_codes > 0:
-		self.cat_codes = tf.placeholder(tf.float32, [None, self.n_cat_codes], 'cat_codes')
-	    else:
-		self.cat_codes = None
-		
-	    if self.n_cont_codes > 0:
-		self.cont_codes = tf.placeholder(tf.float32, [None, self.n_cont_codes], 'cont_codes')
-	    else:
-		self.cont_codes = None
-		
-            self.images = tf.placeholder(tf.float32, [None, 28, 28, 1], 'mnist_images')
-	    self.fake_images = self.G(self.noise, self.cat_codes, self.cont_codes)
+	    self.cont_codes = None
+	    self.noise = inputs[2]
+	    self.attributes = inputs[1]
+            self.images = inputs[0]
+	    self.fake_images = self.G(self.noise, self.attributes, self.cont_codes)
 	    
 	    self.logits_real, _ = self.D(self.images) # too bad Q is not used for real samples...
 	    self.logits_fake, self.Q_logits = self.D(self.fake_images, reuse=True) 
 	    
-	    if self.n_cat_codes > 0:
+	    if self.n_attributes > 0:
 		#logistic
-		self.Q_loss_att = - tf.reduce_mean(tf.log(self.Q_logits+1e-6) * self.cat_codes + tf.log(1.-self.Q_logits+1e-6) * (1.-self.cat_codes) )
+		self.Q_loss_att = - tf.reduce_mean(tf.log(self.Q_logits+1e-6) * self.attributes + tf.log(1.-self.Q_logits+1e-6) * (1.-self.attributes) )
 		Q_loss_att_summary = tf.summary.scalar('Q_loss_att', self.Q_loss_att)
 
 	    else:
@@ -159,17 +153,17 @@ class attrGAN(object):
 	     # Placeholders for noise, codes and images
 	    
 	    self.noise = tf.placeholder(tf.float32, [None, self.noise_dim], 'noise')
-	    if self.n_cat_codes > 0:
-		self.cat_codes = tf.placeholder(tf.float32, [None, self.n_cat_codes], 'cat_codes')
+	    if self.n_attributes > 0:
+		self.attributes = tf.placeholder(tf.float32, [None, self.n_attributes], 'attributes')
 	    else:
-		self.cat_codes = None
+		self.attributes = None
 		
 	    if self.n_cont_codes > 0:
 		self.cont_codes = tf.placeholder(tf.float32, [None, self.n_cont_codes], 'cont_codes')
 	    else:
 		self.cont_codes = None
 			    
-	    self.fake_images = self.G(self.noise, self.cat_codes, self.cont_codes)
+	    self.fake_images = self.G(self.noise, self.attributes, self.cont_codes)
 	    gen_images_summary = tf.summary.image('gen_images', self.fake_images,max_outputs=10)
 	    self.logits_fake, self.Q_logits = self.D(self.fake_images)
 	    self.pred = self.Q_logits

@@ -17,7 +17,7 @@ def main(_):
     
     with tf.device('/gpu:'+FLAGS.gpu):
 
-	model = attrGAN(mode=FLAGS.mode, n_cat_codes=int(FLAGS.cat_codes), 
+	model = attrGAN(mode=FLAGS.mode, n_attributes=int(FLAGS.cat_codes), 
 			lambda_cat=float(FLAGS.lambda_cat), learning_rate=0.0001)
 	solver = Solver(model, model_save_path=FLAGS.model_save_path+'/'+FLAGS.gpu, 
 			batch_size=int(FLAGS.batch_size), log_dir='logs/'+FLAGS.gpu)
